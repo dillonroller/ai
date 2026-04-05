@@ -46,6 +46,34 @@ With the virtual environment active:
 pip install openai python-dotenv chromadb
 ```
 
+## 4. Get an OpenAI API key
+
+1. Go to https://platform.openai.com/api-keys and sign in (or create an account)
+2. Click **Create new secret key** and give it a name (e.g. `ai-learning`)
+3. Copy the key — you won't be able to see it again
+4. Go to **Settings > Billing** and add a payment method + load some credits ($5 is plenty)
+
+## 5. Set up your `.env` file
+
+Copy the example and paste in your key:
+
+```bash
+cp .env.example .env
+```
+
+Then open `.env` and replace the placeholder with your actual key:
+
+```
+OPENAI_API_KEY=sk-your-key-here
+```
+
+## 6. Run the RAG project
+
+```bash
+cd rag
+python main.py
+```
+
 ## Troubleshooting
 
 **`python3: command not found`** — Python isn't installed or not in your PATH. Try `python` instead of `python3`, or reinstall Python.
@@ -53,3 +81,5 @@ pip install openai python-dotenv chromadb
 **`No module named openai`** — You probably forgot to activate the venv. Run `source .venv/bin/activate` (Mac) or `.venv\Scripts\activate` (Windows) first.
 
 **`AuthenticationError`** — The API key in `.env` is missing or wrong. Make sure it starts with `sk-`.
+
+**`insufficient_quota` / 429 error** — You need to add credits at https://platform.openai.com/settings/organization/billing/overview.
