@@ -48,15 +48,6 @@ pip install openai python-dotenv
 
 We'll add more packages in later projects, but this is all you need for now.
 
-## 4. You're ready
-
-Head into `01-hello-ai/` and follow the README there:
-
-```bash
-cd 01-hello-ai
-python hello.py
-```
-
 ## Troubleshooting
 
 **`python3: command not found`** — Python isn't installed or not in your PATH. Try `python` instead of `python3`, or reinstall Python.
