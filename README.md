@@ -69,13 +69,18 @@ OPENAI_API_KEY=sk-your-key-here
 
 ## 6. Run a project
 
-```bash
-cd chatbot
-python main.py
-```
+| Project | What it does |
+|---------|-------------|
+| `chatbot/` | Conversational AI in the terminal |
+| `rag/` | Answer questions using your own documents |
+| `function-calling/` | Let the LLM call tools (APIs, calculators, etc.) |
+| `agents/` | LLM in a loop that decides its own steps |
+| `fine-tuning/` | Train a model on your own examples |
+
+Pick one and run it:
 
 ```bash
-cd rag
+cd chatbot
 python main.py
 ```
 

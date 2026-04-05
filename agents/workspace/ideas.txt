@@ -1,0 +1,4 @@
+Product ideas:
+- Build a Slack bot that summarizes long threads
+- Add natural language search to our internal docs
+- Let users ask questions about their analytics dashboard

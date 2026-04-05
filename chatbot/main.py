@@ -7,10 +7,6 @@ CHAT_MODEL = "gpt-4o-mini"
 SYSTEM_PROMPT = "You are a helpful assistant. Keep responses concise."
 
 
-def build_messages(history: list[dict], user_input: str) -> list[dict]:
-    return history + [{"role": "user", "content": user_input}]
-
-
 def stream_response(client: OpenAI, messages: list[dict]) -> str:
     stream = client.chat.completions.create(
         model=CHAT_MODEL,

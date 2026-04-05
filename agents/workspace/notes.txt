@@ -1,0 +1,4 @@
+Meeting notes from 2024-03-15:
+- The API migration is on track for Q2.
+- Backend team needs to finalize the auth changes by end of month.
+- Frontend will start integration testing once the new endpoints are live.
