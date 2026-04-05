@@ -1,4 +1,4 @@
-# 03 — RAG (Retrieval-Augmented Generation)
+# RAG (Retrieval-Augmented Generation)
 
 A basic RAG pipeline from scratch. No frameworks — just OpenAI + ChromaDB.
 
@@ -12,16 +12,10 @@ Your question → search vector DB → find relevant chunks → send chunks + qu
 
 ## How to run
 
-Make sure you've done the setup in [SETUP.md](../SETUP.md), then install the extra package:
+Make sure you've done the setup in [SETUP.md](../SETUP.md), then:
 
 ```bash
-pip install chromadb
-```
-
-Then run it:
-
-```bash
-cd 03-rag
+cd rag
 python main.py
 ```
 
