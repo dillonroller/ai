@@ -1,4 +1,5 @@
 from openai import OpenAI
+from dotenv import load_dotenv
 
 # Load the API key from the .env file
 load_dotenv(dotenv_path="../.env")
