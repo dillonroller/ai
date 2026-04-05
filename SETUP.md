@@ -43,10 +43,8 @@ You'll see `(.venv)` at the start of your terminal prompt — that means it's ac
 With the virtual environment active:
 
 ```bash
-pip install openai python-dotenv
+pip install openai python-dotenv chromadb
 ```
-
-We'll add more packages in later projects, but this is all you need for now.
 
 ## Troubleshooting
 
