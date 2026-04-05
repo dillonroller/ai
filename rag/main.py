@@ -1,3 +1,4 @@
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 from openai import OpenAI
@@ -26,7 +27,9 @@ def load_chunks(docs_dir: Path) -> list[Chunk]:
     for path in sorted(docs_dir.glob("*.txt")):
         paragraphs = [p.strip() for p in path.read_text().split("\n\n") if p.strip()]
         for i, text in enumerate(paragraphs):
-            chunks.append(Chunk(id=f"{path.name}_{i}", text=text, source=path.name))
+            # Hash the content so we detect changes, not just filename
+            chunk_id = hashlib.md5(f"{path.name}_{i}_{text}".encode()).hexdigest()
+            chunks.append(Chunk(id=chunk_id, text=text, source=path.name))
     return chunks
 
 
@@ -36,19 +39,32 @@ def embed(client: OpenAI, texts: list[str]) -> list[list[float]]:
     return [e.embedding for e in resp.data]
 
 
-def build_index(client: OpenAI, chunks: list[Chunk]) -> chromadb.Collection:
-    """Embed chunks and store them in a local ChromaDB collection."""
+def sync_index(client: OpenAI, chunks: list[Chunk]) -> chromadb.Collection:
+    """Sync chunks into ChromaDB — only embeds new/changed chunks."""
     db = chromadb.PersistentClient(path=CHROMA_DIR)
-    # Reset collection on each run so we always reflect current documents
-    db.delete_collection(COLLECTION) if COLLECTION in [c.name for c in db.list_collections()] else None
-    collection = db.create_collection(COLLECTION, metadata={"hnsw:space": "cosine"})
+    collection = db.get_or_create_collection(COLLECTION, metadata={"hnsw:space": "cosine"})
 
-    collection.add(
-        ids=[c.id for c in chunks],
-        documents=[c.text for c in chunks],
-        embeddings=embed(client, [c.text for c in chunks]),
-        metadatas=[{"source": c.source} for c in chunks],
-    )
+    existing_ids = set(collection.get()["ids"])
+    new_chunks = [c for c in chunks if c.id not in existing_ids]
+
+    # Remove chunks that no longer exist in documents
+    current_ids = {c.id for c in chunks}
+    stale_ids = [id for id in existing_ids if id not in current_ids]
+    if stale_ids:
+        collection.delete(ids=stale_ids)
+        print(f"  Removed {len(stale_ids)} stale chunks")
+
+    if new_chunks:
+        collection.add(
+            ids=[c.id for c in new_chunks],
+            documents=[c.text for c in new_chunks],
+            embeddings=embed(client, [c.text for c in new_chunks]),
+            metadatas=[{"source": c.source} for c in new_chunks],
+        )
+        print(f"  Embedded {len(new_chunks)} new chunks")
+    else:
+        print("  Index up to date — no embedding needed")
+
     return collection
 
 
@@ -84,14 +100,13 @@ def main():
     question = "What's something interesting about Dillon?"
 
     chunks = load_chunks(DOCS_DIR)
-    print(f"Loaded {len(chunks)} chunks from {DOCS_DIR}/\n")
+    print(f"Loaded {len(chunks)} chunks from {DOCS_DIR}/")
 
-    collection = build_index(client, chunks)
-    context = retrieve(client, collection, question)
+    collection = sync_index(client, chunks)
 
-    print(f"Q: {question}\n")
+    print(f"\nQ: {question}\n")
     print("A: ", end="", flush=True)
-    ask(client, question, context)
+    ask(client, question, context=retrieve(client, collection, question))
 
 
 if __name__ == "__main__":
