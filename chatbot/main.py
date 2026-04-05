@@ -7,6 +7,26 @@ CHAT_MODEL = "gpt-4o-mini"
 SYSTEM_PROMPT = "You are a helpful assistant. Keep responses concise."
 
 
+def build_messages(history: list[dict], user_input: str) -> list[dict]:
+    return history + [{"role": "user", "content": user_input}]
+
+
+def stream_response(client: OpenAI, messages: list[dict]) -> str:
+    stream = client.chat.completions.create(
+        model=CHAT_MODEL,
+        messages=messages,
+        temperature=0.7,
+        stream=True,
+    )
+    response = ""
+    for chunk in stream:
+        if content := chunk.choices[0].delta.content:
+            print(content, end="", flush=True)
+            response += content
+    print("\n")
+    return response
+
+
 def main():
     client = OpenAI()
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
@@ -20,20 +40,8 @@ def main():
 
         messages.append({"role": "user", "content": user_input})
 
-        stream = client.chat.completions.create(
-            model=CHAT_MODEL,
-            messages=messages,
-            temperature=0.7,
-            stream=True,
-        )
-
         print("AI:  ", end="", flush=True)
-        response = ""
-        for chunk in stream:
-            if content := chunk.choices[0].delta.content:
-                print(content, end="", flush=True)
-                response += content
-        print("\n")
+        response = stream_response(client, messages)
 
         messages.append({"role": "assistant", "content": response})
 
