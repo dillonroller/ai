@@ -7,15 +7,22 @@ CHAT_MODEL = "gpt-4o-mini"
 
 
 def ask(client: OpenAI, system: str, user: str) -> str:
-    response = client.chat.completions.create(
+    stream = client.chat.completions.create(
         model=CHAT_MODEL,
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ],
         temperature=0.7,
+        stream=True,
     )
-    return response.choices[0].message.content
+    response = ""
+    for chunk in stream:
+        if content := chunk.choices[0].delta.content:
+            print(content, end="", flush=True)
+            response += content
+    print()
+    return response
 
 
 def researcher(client: OpenAI, topic: str) -> str:
@@ -54,21 +61,17 @@ def run_pipeline(client: OpenAI, topic: str) -> None:
     """Research, draft, critique, revise."""
     print(f"Topic: {topic}\n")
 
-    print("Researcher working...")
+    print("-- Researcher --")
     research = researcher(client, topic)
-    print(f"{research}\n")
 
-    print("Writer drafting...")
+    print("\n-- Writer --")
     draft = writer(client, research)
-    print(f"{draft}\n")
 
-    print("Critic reviewing...")
+    print("\n-- Critic --")
     feedback = critic(client, draft)
-    print(f"{feedback}\n")
 
-    print("Writer revising...")
-    final = revise(client, draft, feedback)
-    print(f"\nFinal output:\n{final}")
+    print("\n-- Revised --")
+    revise(client, draft, feedback)
 
 
 def main():

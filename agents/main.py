@@ -84,6 +84,40 @@ def call_tool(name: str, args: dict) -> str:
     return TOOL_FUNCTIONS[name](**args)
 
 
+def stream_chat(client: OpenAI, messages: list) -> tuple[str, list[dict]]:
+    """Stream a chat completion, accumulating content and tool calls as they arrive."""
+    stream = client.chat.completions.create(
+        model=CHAT_MODEL,
+        messages=messages,
+        tools=TOOLS,
+        stream=True,
+    )
+    content = ""
+    tool_calls: dict[int, dict] = {}
+
+    for chunk in stream:
+        delta = chunk.choices[0].delta
+        if delta.content:
+            print(delta.content, end="", flush=True)
+            content += delta.content
+        if delta.tool_calls:
+            for tc in delta.tool_calls:
+                if tc.index not in tool_calls:
+                    tool_calls[tc.index] = {
+                        "id": "",
+                        "type": "function",
+                        "function": {"name": "", "arguments": ""},
+                    }
+                if tc.id:
+                    tool_calls[tc.index]["id"] = tc.id
+                if tc.function and tc.function.name:
+                    tool_calls[tc.index]["function"]["name"] += tc.function.name
+                if tc.function and tc.function.arguments:
+                    tool_calls[tc.index]["function"]["arguments"] += tc.function.arguments
+
+    return content, list(tool_calls.values())
+
+
 def run_agent(client: OpenAI, task: str) -> None:
     """Run the agent loop until it stops calling tools or hits the step limit."""
     messages = [
@@ -95,24 +129,27 @@ def run_agent(client: OpenAI, task: str) -> None:
     ]
 
     for step in range(1, MAX_STEPS + 1):
-        response = client.chat.completions.create(model=CHAT_MODEL, messages=messages, tools=TOOLS)
-        message = response.choices[0].message
+        print(f"\n[Step {step}] ", end="", flush=True)
+        content, tool_calls = stream_chat(client, messages)
 
-        if not message.tool_calls:
-            print(f"\nAgent: {message.content}")
+        if not tool_calls:
+            print()
             return
 
-        messages.append(message)
+        messages.append({
+            "role": "assistant",
+            "content": content or None,
+            "tool_calls": tool_calls,
+        })
 
-        for tool_call in message.tool_calls:
-            name = tool_call.function.name
-            args = json.loads(tool_call.function.arguments)
+        for tool_call in tool_calls:
+            name = tool_call["function"]["name"]
+            args = json.loads(tool_call["function"]["arguments"])
             result = call_tool(name, args)
-            print(f"  Step {step}: {name}({args}) -> {result[:100]}")
-
+            print(f"\n  -> {name}({args}): {result[:100]}")
             messages.append({
                 "role": "tool",
-                "tool_call_id": tool_call.id,
+                "tool_call_id": tool_call["id"],
                 "content": result,
             })
 

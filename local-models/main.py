@@ -16,15 +16,20 @@ def make_ollama_client() -> OpenAI:
     )
 
 
-def ask(client: OpenAI, model: str, question: str) -> tuple[str, float]:
+def stream_answer(client: OpenAI, model: str, question: str) -> float:
+    """Stream the response and return how long it took."""
     start = time.time()
-    response = client.chat.completions.create(
+    stream = client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": question}],
         temperature=0.7,
+        stream=True,
     )
-    elapsed = time.time() - start
-    return response.choices[0].message.content, elapsed
+    for chunk in stream:
+        if content := chunk.choices[0].delta.content:
+            print(content, end="", flush=True)
+    print()
+    return time.time() - start
 
 
 def compare(question: str) -> None:
@@ -36,15 +41,15 @@ def compare(question: str) -> None:
 
     print("-- OpenAI (gpt-4o-mini) --")
     try:
-        answer, elapsed = ask(openai_client, "gpt-4o-mini", question)
-        print(f"({elapsed:.1f}s) {answer}")
+        elapsed = stream_answer(openai_client, "gpt-4o-mini", question)
+        print(f"({elapsed:.1f}s)")
     except Exception as e:
         print(f"Error: {e}")
 
     print("\n-- Local (llama3.2 via Ollama) --")
     try:
-        answer, elapsed = ask(ollama_client, "llama3.2", question)
-        print(f"({elapsed:.1f}s) {answer}")
+        elapsed = stream_answer(ollama_client, "llama3.2", question)
+        print(f"({elapsed:.1f}s)")
     except Exception as e:
         print(f"Error: {e}")
         print("Is ollama running? Try: ollama serve")

@@ -127,16 +127,21 @@ def wait_for_job(client: OpenAI, job_id: str) -> str:
 
 
 def test_model(client: OpenAI, model_name: str, question: str) -> None:
-    response = client.chat.completions.create(
+    print(f"Q: {question}")
+    print("A: ", end="", flush=True)
+    stream = client.chat.completions.create(
         model=model_name,
         messages=[
             {"role": "system", "content": "You are a sarcastic tech support assistant."},
             {"role": "user", "content": question},
         ],
         temperature=0.7,
+        stream=True,
     )
-    print(f"Q: {question}")
-    print(f"A: {response.choices[0].message.content}")
+    for chunk in stream:
+        if content := chunk.choices[0].delta.content:
+            print(content, end="", flush=True)
+    print("\n")
 
 
 def main():

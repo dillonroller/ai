@@ -66,6 +66,44 @@ def call_tool(name: str, args: dict) -> str:
     return json.dumps(TOOL_FUNCTIONS[name](**args))
 
 
+def stream_chat(client: OpenAI, messages: list, tools: list, print_prefix: str = "") -> tuple[str, list[dict]]:
+    """Stream a chat completion, accumulating content and tool calls as they arrive."""
+    stream = client.chat.completions.create(
+        model=CHAT_MODEL,
+        messages=messages,
+        tools=tools,
+        stream=True,
+    )
+    content = ""
+    tool_calls: dict[int, dict] = {}
+
+    for chunk in stream:
+        delta = chunk.choices[0].delta
+        if delta.content:
+            if not content and print_prefix:
+                print(print_prefix, end="", flush=True)
+            print(delta.content, end="", flush=True)
+            content += delta.content
+        if delta.tool_calls:
+            for tc in delta.tool_calls:
+                if tc.index not in tool_calls:
+                    tool_calls[tc.index] = {
+                        "id": "",
+                        "type": "function",
+                        "function": {"name": "", "arguments": ""},
+                    }
+                if tc.id:
+                    tool_calls[tc.index]["id"] = tc.id
+                if tc.function and tc.function.name:
+                    tool_calls[tc.index]["function"]["name"] += tc.function.name
+                if tc.function and tc.function.arguments:
+                    tool_calls[tc.index]["function"]["arguments"] += tc.function.arguments
+
+    if content:
+        print()
+    return content, list(tool_calls.values())
+
+
 def run_conversation(client: OpenAI, user_message: str) -> None:
     """Send a message, let the LLM call tools if it wants, then get the final answer."""
     messages = [
@@ -73,28 +111,24 @@ def run_conversation(client: OpenAI, user_message: str) -> None:
         {"role": "user", "content": user_message},
     ]
 
-    response = client.chat.completions.create(model=CHAT_MODEL, messages=messages, tools=TOOLS)
-    message = response.choices[0].message
+    while True:
+        content, tool_calls = stream_chat(client, messages, TOOLS, print_prefix="  Answer: ")
 
-    while message.tool_calls:
-        messages.append(message)
+        if not tool_calls:
+            return
 
-        for tool_call in message.tool_calls:
-            name = tool_call.function.name
-            args = json.loads(tool_call.function.arguments)
+        messages.append({"role": "assistant", "content": content or None, "tool_calls": tool_calls})
+
+        for tool_call in tool_calls:
+            name = tool_call["function"]["name"]
+            args = json.loads(tool_call["function"]["arguments"])
             result = call_tool(name, args)
             print(f"  Tool call: {name}({args}) -> {result}")
-
             messages.append({
                 "role": "tool",
-                "tool_call_id": tool_call.id,
+                "tool_call_id": tool_call["id"],
                 "content": result,
             })
-
-        response = client.chat.completions.create(model=CHAT_MODEL, messages=messages, tools=TOOLS)
-        message = response.choices[0].message
-
-    print(f"  Answer: {message.content}")
 
 
 def main():

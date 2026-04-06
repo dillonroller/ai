@@ -9,15 +9,15 @@ MAX_STEPS = 10
 
 
 def search_web(query: str) -> str:
-    fake_results = {
-        "polymarket": "Polymarket is a decentralized prediction market built on Polygon. It uses USDC for trading.",
-        "ethereum price": "Ethereum is currently trading around $3,200 USD.",
-        "bitcoin price": "Bitcoin is currently trading around $67,000 USD.",
-        "rust language": "Rust is a systems programming language focused on safety and performance. Created by Graydon Hoare at Mozilla.",
-    }
-    for key, result in fake_results.items():
-        if key in query.lower():
-            return result
+    q = query.lower()
+    if "bitcoin" in q or "btc" in q:
+        return "Bitcoin is currently trading around $67,000 USD."
+    if "ethereum" in q or "eth" in q:
+        return "Ethereum is currently trading around $3,200 USD."
+    if "polymarket" in q:
+        return "Polymarket is a decentralized prediction market built on Polygon. It uses USDC for trading."
+    if "rust" in q:
+        return "Rust is a systems programming language focused on safety and performance. Created by Graydon Hoare at Mozilla."
     return "No results found."
 
 
@@ -73,6 +73,40 @@ def call_tool(name: str, args: dict) -> str:
     return TOOL_FUNCTIONS[name](**args)
 
 
+def stream_chat(client: OpenAI, messages: list) -> tuple[str, list[dict]]:
+    """Stream a chat completion, accumulating content and tool calls as they arrive."""
+    stream = client.chat.completions.create(
+        model=CHAT_MODEL,
+        messages=messages,
+        tools=TOOLS,
+        stream=True,
+    )
+    content = ""
+    tool_calls: dict[int, dict] = {}
+
+    for chunk in stream:
+        delta = chunk.choices[0].delta
+        if delta.content:
+            print(delta.content, end="", flush=True)
+            content += delta.content
+        if delta.tool_calls:
+            for tc in delta.tool_calls:
+                if tc.index not in tool_calls:
+                    tool_calls[tc.index] = {
+                        "id": "",
+                        "type": "function",
+                        "function": {"name": "", "arguments": ""},
+                    }
+                if tc.id:
+                    tool_calls[tc.index]["id"] = tc.id
+                if tc.function and tc.function.name:
+                    tool_calls[tc.index]["function"]["name"] += tc.function.name
+                if tc.function and tc.function.arguments:
+                    tool_calls[tc.index]["function"]["arguments"] += tc.function.arguments
+
+    return content, list(tool_calls.values())
+
+
 def run_react(client: OpenAI, task: str) -> None:
     """Run a ReAct loop where the agent reasons out loud before each action."""
     messages = [
@@ -81,27 +115,29 @@ def run_react(client: OpenAI, task: str) -> None:
     ]
 
     for step in range(1, MAX_STEPS + 1):
-        response = client.chat.completions.create(model=CHAT_MODEL, messages=messages, tools=TOOLS)
-        message = response.choices[0].message
+        print(f"\n[Step {step}] Thought: ", end="", flush=True)
+        content, tool_calls = stream_chat(client, messages)
+        print()
 
-        if message.content:
-            print(f"\n[Step {step}] Thought: {message.content}")
-
-        if not message.tool_calls:
+        if not tool_calls:
             return
 
-        messages.append(message)
+        messages.append({
+            "role": "assistant",
+            "content": content or None,
+            "tool_calls": tool_calls,
+        })
 
-        for tool_call in message.tool_calls:
-            name = tool_call.function.name
-            args = json.loads(tool_call.function.arguments)
+        for tool_call in tool_calls:
+            name = tool_call["function"]["name"]
+            args = json.loads(tool_call["function"]["arguments"])
             result = call_tool(name, args)
             print(f"[Step {step}] Action: {name}({args})")
             print(f"[Step {step}] Observation: {result}")
 
             messages.append({
                 "role": "tool",
-                "tool_call_id": tool_call.id,
+                "tool_call_id": tool_call["id"],
                 "content": result,
             })
 
