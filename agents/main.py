@@ -1,13 +1,5 @@
-"""
-An agent is an LLM in a loop that decides what to do next on its own.
-
-Instead of you writing the logic ("first do X, then do Y"), you give the model tools
-and a goal, and it figures out the steps. It keeps going until it thinks it's done.
-
-This is the architecture behind ChatGPT's "deep research", Devin, Cursor, etc.
-"""
-
 import json
+from pathlib import Path
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -16,8 +8,6 @@ load_dotenv(dotenv_path="../.env")
 CHAT_MODEL = "gpt-4o-mini"
 MAX_STEPS = 10
 
-
-# -- Tools the agent can use --------------------------------------------------
 
 def read_file(filename: str) -> str:
     try:
@@ -34,7 +24,6 @@ def write_file(filename: str, content: str) -> str:
 
 
 def list_files(directory: str) -> str:
-    from pathlib import Path
     path = Path(directory)
     if not path.exists():
         return f"Error: {directory} not found"
@@ -56,9 +45,7 @@ TOOLS = [
             "description": "Read the contents of a file",
             "parameters": {
                 "type": "object",
-                "properties": {
-                    "filename": {"type": "string"},
-                },
+                "properties": {"filename": {"type": "string"}},
                 "required": ["filename"],
             },
         },
@@ -85,9 +72,7 @@ TOOLS = [
             "description": "List all files in a directory",
             "parameters": {
                 "type": "object",
-                "properties": {
-                    "directory": {"type": "string"},
-                },
+                "properties": {"directory": {"type": "string"}},
                 "required": ["directory"],
             },
         },
@@ -96,12 +81,11 @@ TOOLS = [
 
 
 def call_tool(name: str, args: dict) -> str:
-    fn = TOOL_FUNCTIONS[name]
-    return fn(**args)
+    return TOOL_FUNCTIONS[name](**args)
 
 
 def run_agent(client: OpenAI, task: str) -> None:
-    """Run an agent loop: the LLM calls tools until it decides it's done."""
+    """Run the agent loop until it stops calling tools or hits the step limit."""
     messages = [
         {"role": "system", "content": (
             "You are an agent that completes tasks using the provided tools. "
@@ -111,11 +95,7 @@ def run_agent(client: OpenAI, task: str) -> None:
     ]
 
     for step in range(1, MAX_STEPS + 1):
-        response = client.chat.completions.create(
-            model=CHAT_MODEL,
-            messages=messages,
-            tools=TOOLS,
-        )
+        response = client.chat.completions.create(model=CHAT_MODEL, messages=messages, tools=TOOLS)
         message = response.choices[0].message
 
         if not message.tool_calls:
@@ -141,7 +121,6 @@ def run_agent(client: OpenAI, task: str) -> None:
 
 def main():
     client = OpenAI()
-
     task = (
         "Look at the files in the 'workspace' directory. "
         "Read each one, then write a summary.txt that summarizes everything you found."

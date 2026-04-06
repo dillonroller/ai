@@ -38,7 +38,6 @@ def content_hash(filename: str, index: int, text: str) -> str:
 
 
 def get_embeddings(client: OpenAI, texts: list[str]) -> list[list[float]]:
-    """Turn a list of strings into vectors using OpenAI's embedding model."""
     resp = client.embeddings.create(model=EMBEDDING_MODEL, input=texts)
     return [e.embedding for e in resp.data]
 
@@ -92,7 +91,6 @@ def retrieve(client: OpenAI, collection: chromadb.Collection, query: str, n: int
 
 
 def stream_response(client: OpenAI, question: str, context: list[str]) -> None:
-    """Send the question and retrieved context to the LLM, stream the answer."""
     ctx = "\n\n".join(context)
     stream = client.chat.completions.create(
         model=CHAT_MODEL,

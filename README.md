@@ -43,7 +43,7 @@ You'll see `(.venv)` at the start of your terminal prompt when it's active. You 
 With the virtual environment active:
 
 ```bash
-pip install openai python-dotenv chromadb
+pip install openai python-dotenv chromadb pydantic
 ```
 
 ## 4. Get an OpenAI API key
@@ -74,8 +74,11 @@ OPENAI_API_KEY=sk-your-key-here
 | `chatbot/` | Conversational AI in the terminal |
 | `rag/` | Answer questions using your own documents |
 | `function-calling/` | Let the LLM call tools (APIs, calculators, etc.) |
-| `agents/` | LLM in a loop that decides its own steps |
+| `structured-outputs/` | Force the LLM to return typed JSON you can use in code |
+| `agents/` | LLM in a loop that decides its own steps (basic, ReAct, multi-agent) |
+| `evaluation/` | Measure whether your AI is actually good |
 | `fine-tuning/` | Train a model on your own examples |
+| `local-models/` | Run open-source models locally with Ollama |
 
 Pick one and run it:
 

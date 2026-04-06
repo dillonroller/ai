@@ -1,17 +1,3 @@
-"""
-Fine-tuning takes an existing model and trains it on your own examples so it learns
-a specific style, format, or domain knowledge. It's like teaching the model by example.
-
-This script:
-1. Generates a training file in the format OpenAI expects
-2. Uploads it
-3. Kicks off a fine-tuning job
-4. Tests the result once it's ready
-
-You only pay for training once, then the fine-tuned model is cheaper per-call than
-prompting a larger model with instructions every time.
-"""
-
 import json
 import time
 from openai import OpenAI
@@ -22,10 +8,6 @@ load_dotenv(dotenv_path="../.env")
 BASE_MODEL = "gpt-4o-mini-2024-07-18"
 TRAINING_FILE = "training_data.jsonl"
 
-
-# -- Training data ------------------------------------------------------------
-# Each example is a conversation showing the model how you want it to behave.
-# More examples = better results. 10 is the minimum, 50+ is recommended.
 
 TRAINING_EXAMPLES = [
     {
@@ -110,7 +92,6 @@ def write_training_file(examples: list[dict], path: str) -> None:
 
 
 def upload_training_file(client: OpenAI, path: str) -> str:
-    """Upload the training file to OpenAI and return the file ID."""
     with open(path, "rb") as f:
         result = client.files.create(file=f, purpose="fine-tune")
     print(f"Uploaded file: {result.id}")
@@ -118,7 +99,6 @@ def upload_training_file(client: OpenAI, path: str) -> str:
 
 
 def start_fine_tune(client: OpenAI, file_id: str) -> str:
-    """Start a fine-tuning job and return the job ID."""
     job = client.fine_tuning.jobs.create(
         training_file=file_id,
         model=BASE_MODEL,
@@ -129,7 +109,7 @@ def start_fine_tune(client: OpenAI, file_id: str) -> str:
 
 def wait_for_job(client: OpenAI, job_id: str) -> str:
     """Poll until the job is done, return the fine-tuned model name."""
-    print("Waiting for training to complete (this usually takes 5-15 minutes)...")
+    print("Waiting for training to complete...")
     while True:
         job = client.fine_tuning.jobs.retrieve(job_id)
         status = job.status
@@ -147,7 +127,6 @@ def wait_for_job(client: OpenAI, job_id: str) -> str:
 
 
 def test_model(client: OpenAI, model_name: str, question: str) -> None:
-    """Test the fine-tuned model with a question."""
     response = client.chat.completions.create(
         model=model_name,
         messages=[
@@ -168,7 +147,7 @@ def main():
     job_id = start_fine_tune(client, file_id)
     model_name = wait_for_job(client, job_id)
 
-    print("\nTesting the fine-tuned model:\n")
+    print()
     test_model(client, model_name, "My Bluetooth headphones won't connect.")
     test_model(client, model_name, "I accidentally sent an email to the wrong person.")
 

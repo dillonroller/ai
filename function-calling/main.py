@@ -1,10 +1,3 @@
-"""
-Function calling lets the LLM use tools you define. Instead of just generating text,
-it can decide to call a function, get the result, and use that to answer your question.
-
-This is how ChatGPT plugins, web browsing, and code execution work under the hood.
-"""
-
 import json
 import random
 from openai import OpenAI
@@ -15,12 +8,7 @@ load_dotenv(dotenv_path="../.env")
 CHAT_MODEL = "gpt-4o-mini"
 
 
-# -- Tools the LLM can call --------------------------------------------------
-# These are just regular Python functions. The LLM doesn't run them directly,
-# it just decides WHEN to call them and with WHAT arguments. We run them ourselves.
-
 def get_weather(city: str) -> dict:
-    """Fake weather API for demo purposes."""
     weather_data = {
         "new york": {"temp": 72, "condition": "sunny"},
         "london": {"temp": 58, "condition": "cloudy"},
@@ -31,22 +19,17 @@ def get_weather(city: str) -> dict:
 
 
 def calculate(expression: str) -> dict:
-    """Evaluate a math expression."""
     try:
-        result = eval(expression)  # fine for a demo, never do this in production
-        return {"expression": expression, "result": result}
+        return {"expression": expression, "result": eval(expression)}
     except Exception as e:
         return {"expression": expression, "error": str(e)}
 
 
-# Map of function names to actual functions
 TOOL_FUNCTIONS = {
     "get_weather": get_weather,
     "calculate": calculate,
 }
 
-# This is the schema that tells the LLM what tools exist and how to call them.
-# It's just JSON describing the function name, parameters, and types.
 TOOLS = [
     {
         "type": "function",
@@ -80,9 +63,7 @@ TOOLS = [
 
 
 def call_tool(name: str, args: dict) -> str:
-    fn = TOOL_FUNCTIONS[name]
-    result = fn(**args)
-    return json.dumps(result)
+    return json.dumps(TOOL_FUNCTIONS[name](**args))
 
 
 def run_conversation(client: OpenAI, user_message: str) -> None:
@@ -92,14 +73,9 @@ def run_conversation(client: OpenAI, user_message: str) -> None:
         {"role": "user", "content": user_message},
     ]
 
-    response = client.chat.completions.create(
-        model=CHAT_MODEL,
-        messages=messages,
-        tools=TOOLS,
-    )
+    response = client.chat.completions.create(model=CHAT_MODEL, messages=messages, tools=TOOLS)
     message = response.choices[0].message
 
-    # The LLM might call one or more tools before answering
     while message.tool_calls:
         messages.append(message)
 
@@ -115,12 +91,7 @@ def run_conversation(client: OpenAI, user_message: str) -> None:
                 "content": result,
             })
 
-        # Send the tool results back so the LLM can generate a final answer
-        response = client.chat.completions.create(
-            model=CHAT_MODEL,
-            messages=messages,
-            tools=TOOLS,
-        )
+        response = client.chat.completions.create(model=CHAT_MODEL, messages=messages, tools=TOOLS)
         message = response.choices[0].message
 
     print(f"  Answer: {message.content}")
