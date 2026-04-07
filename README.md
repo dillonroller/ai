@@ -69,21 +69,26 @@ OPENAI_API_KEY=sk-your-key-here
 
 ## 6. Run a project
 
+The repo is split by language:
+
+- `python/` — AI example programs (start here)
+- `rust/` — Rust counterparts and infra-layer examples (coming soon)
+
 | Project | What it does |
 |---------|-------------|
-| `chatbot/` | Conversational AI in the terminal |
-| `rag/` | Answer questions using your own documents |
-| `function-calling/` | Let the LLM call tools (APIs, calculators, etc.) |
-| `structured-outputs/` | Force the LLM to return typed JSON you can use in code |
-| `agents/` | LLM in a loop that decides its own steps (basic, ReAct, multi-agent) |
-| `evaluation/` | Measure whether your AI is actually good |
-| `fine-tuning/` | Train a model on your own examples |
-| `local-models/` | Run open-source models locally with Ollama |
+| [`python/chatbot/`](python/chatbot/) | Conversational AI in the terminal |
+| [`python/rag/`](python/rag/) | Answer questions using your own documents |
+| [`python/function-calling/`](python/function-calling/) | Let the LLM call tools (APIs, calculators, etc.) |
+| [`python/structured-outputs/`](python/structured-outputs/) | Force the LLM to return typed JSON you can use in code |
+| [`python/agents/`](python/agents/) | LLM in a loop that decides its own steps (basic, ReAct, multi-agent) |
+| [`python/evaluation/`](python/evaluation/) | Measure whether your AI is actually good |
+| [`python/fine-tuning/`](python/fine-tuning/) | Train a model on your own examples |
+| [`python/local-models/`](python/local-models/) | Run open-source models locally with Ollama |
 
 Pick one and run it:
 
 ```bash
-cd chatbot
+cd python/chatbot
 python main.py
 ```
 

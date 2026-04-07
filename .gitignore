@@ -4,3 +4,4 @@ __pycache__/
 chroma_data/
 training_data.jsonl
 summary.txt
+.claude
