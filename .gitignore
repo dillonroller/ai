@@ -6,3 +6,4 @@ training_data.jsonl
 summary.txt
 .claude
 *.db
+target/
