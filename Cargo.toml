@@ -1,0 +1,6 @@
+[workspace]
+resolver = "2"
+members = [
+    "rust/candle-inference",
+    "rust/tokenizer-playground",
+]
