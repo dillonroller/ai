@@ -2,6 +2,7 @@
 .env
 __pycache__/
 chroma_data/
+memory_store/
 training_data.jsonl
 summary.txt
 .claude
