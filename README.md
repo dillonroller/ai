@@ -69,26 +69,22 @@ OPENAI_API_KEY=sk-your-key-here
 
 ## 6. Run a project
 
-The repo is split by language:
-
-- `python/` — AI example programs (start here)
-- `rust/` — Rust counterparts and infra-layer examples (coming soon)
-
 | Project | What it does |
 |---------|-------------|
-| [`python/chatbot/`](python/chatbot/) | Conversational AI in the terminal |
-| [`python/rag/`](python/rag/) | Answer questions using your own documents |
-| [`python/function-calling/`](python/function-calling/) | Let the LLM call tools (APIs, calculators, etc.) |
-| [`python/structured-outputs/`](python/structured-outputs/) | Force the LLM to return typed JSON you can use in code |
-| [`python/agents/`](python/agents/) | LLM in a loop that decides its own steps (basic, ReAct, multi-agent) |
-| [`python/evaluation/`](python/evaluation/) | Measure whether your AI is actually good |
-| [`python/fine-tuning/`](python/fine-tuning/) | Train a model on your own examples |
-| [`python/local-models/`](python/local-models/) | Run open-source models locally with Ollama |
+| [`chatbot/`](chatbot/) | Conversational AI in the terminal |
+| [`rag/`](rag/) | Answer questions using your own documents |
+| [`function-calling/`](function-calling/) | Let the LLM call tools (APIs, calculators, etc.) |
+| [`structured-outputs/`](structured-outputs/) | Force the LLM to return typed JSON you can use in code |
+| [`agents/`](agents/) | LLM in a loop that decides its own steps (basic, ReAct, multi-agent) |
+| [`evaluation/`](evaluation/) | Measure whether your AI is actually good |
+| [`fine-tuning/`](fine-tuning/) | Train a model on your own examples |
+| [`local-models/`](local-models/) | Run open-source models locally with Ollama |
+| [`mcp-server/`](mcp-server/) | Expose tools and data to any LLM via the Model Context Protocol |
 
 Pick one and run it:
 
 ```bash
-cd python/chatbot
+cd chatbot
 python main.py
 ```
 
