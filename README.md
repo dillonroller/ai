@@ -79,6 +79,7 @@ OPENAI_API_KEY=sk-your-key-here
 | [`evaluation/`](evaluation/) | Measure whether your AI is actually good |
 | [`fine-tuning/`](fine-tuning/) | Train a model on your own examples |
 | [`local-models/`](local-models/) | Run open-source models locally with Ollama |
+| [`memory/`](memory/) | A chatbot that remembers you across sessions |
 | [`mcp-server/`](mcp-server/) | Expose tools and data to any LLM via the Model Context Protocol |
 
 Pick one and run it:
